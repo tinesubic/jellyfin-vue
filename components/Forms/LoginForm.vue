@@ -60,7 +60,7 @@
 </template>
 
 <script lang="ts">
-import { isEmpty } from 'lodash';
+import isEmpty from 'lodash/isEmpty';
 import Vue from 'vue';
 import { mapActions } from 'vuex';
 import { UserDto } from '@jellyfin/client-axios';
