@@ -11,6 +11,7 @@ import { PlaybackManagerState } from './playbackManager';
 import { BackdropState } from './backdrop';
 import { DeviceState } from './deviceProfile';
 import { DisplayPreferencesState } from './displayPreferences';
+import { ItemsState } from './items';
 
 export interface RootState {
   socket: {
@@ -25,6 +26,7 @@ export interface AppState extends RootState {
   device: DeviceState;
   displayPreferences: DisplayPreferencesState;
   homeSection: HomeSectionState;
+  items: ItemsState;
   page: PageState;
   playbackManager: PlaybackManagerState;
   servers: ServerState;
