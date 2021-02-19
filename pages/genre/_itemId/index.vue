@@ -47,25 +47,17 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { mapActions } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import { BaseItemDto } from '@jellyfin/client-axios';
 import itemHelper from '~/mixins/itemHelper';
 
 export default Vue.extend({
   mixins: [itemHelper],
-  async asyncData({ params, $api, $auth }) {
-    const genre = (
-      await $api.userLibrary.getItem({
-        userId: $auth.user?.Id,
-        itemId: params.itemId
-      })
-    ).data;
-
-    return { genre };
+  async asyncData({ store, params }) {
+    await store.dispatch('items/fetchItem', { id: params.itemId });
   },
   data() {
     return {
-      genre: [] as BaseItemDto,
       items: [] as BaseItemDto[]
     };
   },
@@ -85,6 +77,12 @@ export default Vue.extend({
     return {
       title: this.$store.state.page.title
     };
+  },
+  computed: {
+    ...mapGetters('items', ['getItem']),
+    genre(): BaseItemDto {
+      return this.getItem(this.$route.params.itemId);
+    }
   },
   beforeMount() {
     this.setAppBarOpacity({ opaqueAppBar: true });
