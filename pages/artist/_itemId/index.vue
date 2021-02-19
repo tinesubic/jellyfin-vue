@@ -112,7 +112,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { mapActions } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import { BaseItemDto, ImageType } from '@jellyfin/client-axios';
 import htmlHelper from '~/mixins/htmlHelper';
 import imageHelper from '~/mixins/imageHelper';
@@ -121,18 +121,14 @@ import itemHelper from '~/mixins/itemHelper';
 
 export default Vue.extend({
   mixins: [htmlHelper, imageHelper, timeUtils, itemHelper],
-  async asyncData({ params, $api, $auth }) {
-    const item = (
-      await $api.userLibrary.getItem({
-        userId: $auth.user?.Id,
-        itemId: params.itemId
-      })
-    ).data;
+  async asyncData({ params, $api, $auth, store }) {
+    const id = params.itemId;
+    await store.dispatch('items/fetchItem', { id });
 
     const appearances = (
       await $api.items.getItems({
         userId: $auth.user?.Id,
-        albumArtistIds: [params.itemId],
+        albumArtistIds: [id],
         sortBy: 'PremiereDate,ProductionYear,SortName',
         sortOrder: 'Descending',
         recursive: true,
@@ -140,12 +136,11 @@ export default Vue.extend({
       })
     ).data.Items;
 
-    return { item, appearances };
+    return { appearances };
   },
   data() {
     return {
       activeTab: 0,
-      item: {} as BaseItemDto,
       appearances: [] as BaseItemDto[]
     };
   },
@@ -155,9 +150,13 @@ export default Vue.extend({
     };
   },
   computed: {
+    ...mapGetters('items', ['getItem']),
+    item(): BaseItemDto {
+      return this.getItem(this.$route.params.itemId);
+    },
     overview(): string {
-      if (this.$data.item.Overview) {
-        return this.sanitizeHtml(this.$data.item.Overview);
+      if (this.item.Overview) {
+        return this.sanitizeHtml(this.item.Overview);
       } else {
         return '';
       }
