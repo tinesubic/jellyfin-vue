@@ -20,6 +20,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import { BaseItemDto, ImageType, ItemFields } from '@jellyfin/client-axios';
+import { mapActions, mapGetters } from 'vuex';
 
 export default Vue.extend({
   props: {
@@ -36,6 +37,9 @@ export default Vue.extend({
       show: false,
       extraText: ''
     };
+  },
+  computed: {
+    ...mapGetters('items', ['getItem'])
   },
   async beforeMount() {
     this.items = (
@@ -63,14 +67,8 @@ export default Vue.extend({
         continue;
       }
 
-      const itemData = (
-        await this.$api.userLibrary.getItem({
-          userId: this.$auth.user?.Id,
-          itemId: id
-        })
-      ).data;
-
-      this.relatedItems[key] = itemData;
+      await this.fetchItem({ id });
+      this.relatedItems[key] = this.getItem(id);
     }
 
     if (this.items.length === 0) {
@@ -81,6 +79,7 @@ export default Vue.extend({
     window.setTimeout(this.hideWelcomeMessage, 1500);
   },
   methods: {
+    ...mapActions('items', ['fetchItem']),
     hideWelcomeMessage(): void {
       if (this.items.length === 0) {
         const elem = this.$refs.headerWelcome as HTMLElement;
