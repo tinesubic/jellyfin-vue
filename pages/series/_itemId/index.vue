@@ -179,7 +179,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { mapActions } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import {
   BaseItemDto,
   BaseItemPerson,
@@ -200,36 +200,11 @@ interface TwoColsInfoColumn {
 
 export default Vue.extend({
   mixins: [imageHelper, formsHelper, itemHelper],
-  async asyncData({ params, $api, $auth }) {
-    const item = (
-      await $api.userLibrary.getItem({
-        userId: $auth.user?.Id,
-        itemId: params.itemId
-      })
-    ).data;
-
-    let crew: BaseItemPerson[] = [];
-    if (item.People) {
-      crew = item.People.filter((person: BaseItemPerson) => {
-        return ['Director', 'Writer'].includes(person.Type || '');
-      });
-    }
-
-    let currentSource: MediaSourceInfo = {};
-
-    if (item.MediaSources && item.MediaSources.length > 0)
-      currentSource = item.MediaSources[0];
-
-    return {
-      item,
-      crew,
-      currentSource
-    };
+  async asyncData({ params, store }) {
+    await store.dispatch('items/fetchItem', { id: params.itemId });
   },
   data() {
     return {
-      item: {} as BaseItemDto,
-      crew: [] as BaseItemPerson[],
       parentItem: {} as BaseItemDto,
       backdropImageSource: '',
       currentSource: {} as MediaSourceInfo,
@@ -244,6 +219,19 @@ export default Vue.extend({
     };
   },
   computed: {
+    ...mapGetters('items', ['getItem']),
+    item(): BaseItemDto {
+      return this.getItem(this.$route.params.itemId);
+    },
+    crew(): BaseItemPerson[] {
+      if (this.item.People) {
+        return this.item.People.filter((person: BaseItemPerson) => {
+          return ['Director', 'Writer'].includes(person.Type || '');
+        });
+      } else {
+        return [];
+      }
+    },
     twoColsInfoColumn: {
       get(): TwoColsInfoColumn {
         return {
@@ -321,6 +309,10 @@ export default Vue.extend({
       immediate: true,
       deep: true
     }
+  },
+  beforeMount() {
+    if (this.item.MediaSources && this.item.MediaSources.length > 0)
+      this.currentSource = this.item.MediaSources[0];
   },
   created() {
     this.setAppBarOpacity({ opaqueAppBar: false });
